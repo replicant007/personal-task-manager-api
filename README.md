@@ -3,18 +3,26 @@ Build a simple REST API service for managing tasks.
 
 ## Core features
 
-`CRUD operations for tasks (Create, Read, Update, Delete)
+CRUD operations for tasks (Create, Read, Update, Delete)
+
 JSON API endpoints: GET /tasks, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id}
+
 In-memory storage initially (slice of structs), then optionally upgrade to SQLite
-Basic task fields: ID, title, description, completed status, created date
+
+:white_check_mark: Basic task fields: ID, title, description, completed status, created date
 
 ## What will I learn
 
 HTTP servers with net/http and routing
+
 JSON marshaling/unmarshaling with struct tags
+
 Error handling patterns in Go
+
 Package organization and project structure
+
 Testing with the standard library
+
 Middleware concepts (logging, CORS)
 
 ## Progressive Complexity - Start Simple, Add Features
