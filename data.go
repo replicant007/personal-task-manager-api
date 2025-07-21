@@ -166,3 +166,17 @@ func getAllTasks() []Task {
 
 	return tasks
 }
+
+func createTask(task Task) error {
+	stmt, err := db.Prepare(`
+		INSERT INTO Tasks (id, title, description, completed_status, created_date)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(task.Id, task.Title, task.Description, int(task.CompletedStatus), task.CreatedDate)
+	return err
+}
