@@ -1,5 +1,7 @@
 package main
 
+import "encoding/json"
+
 type Status int
 
 const (
@@ -9,8 +11,8 @@ const (
 	Canceled
 )
 
-func (s Status) String() string {
-	switch s {
+func (str Status) String() string {
+	switch str {
 	case Open:
 		return "Not Started"
 
@@ -26,4 +28,8 @@ func (s Status) String() string {
 	default:
 		return "Unknown"
 	}
+}
+
+func (stat Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(stat.String())
 }

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
 func main() {
-
-	fmt.Println(tasks)
+	InitDB()
+	defer db.Close()
 
 	http.HandleFunc("/tasks", getTaskHandler)
 	http.ListenAndServe(":8080", nil)

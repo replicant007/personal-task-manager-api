@@ -6,6 +6,8 @@ Build a simple REST API service for managing tasks.
 
 :white_check_mark: Create a slice of type Task (ID, title, description, completed status, created date)
 
+:white_check_mark: Swap slice of Tasks with a SQLite DB
+
 :point_right: Create handlers and routes for all type of operations (CRUD)
 
 Reorganize the project file structure
@@ -21,8 +23,6 @@ Implement validation
 Implement filtering
 
 Implement struct tags
-
-Swap slice of Tasks with a SQLite DB
 
 Add users
 
