@@ -62,7 +62,7 @@ func insertTaskHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(task)
 }
 
-func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+func modifyTaskHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/tasks/")
 
 	if id == "" {
@@ -70,6 +70,17 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch r.Method {
+	case http.MethodPut:
+		updateTaskHandler(w, r, id)
+	case http.MethodDelete:
+		deleteTaskHandler(w, r, id)
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func updateTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
 	var newTask Task
 	if err := json.NewDecoder(r.Body).Decode(&newTask); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -90,10 +101,24 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := updateTask(id, newTask)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "does not exist") {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, "Failed to update task", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func deleteTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
+	err := deleteTask(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to delete task", http.StatusInternalServerError)
 		}
 		return
 	}

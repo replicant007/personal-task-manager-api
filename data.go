@@ -183,7 +183,7 @@ func createTask(task Task) error {
 
 func updateTask(id string, task Task) error {
 	if !taskExists(id) {
-		return fmt.Errorf("task with ID %q not found", id)
+		return fmt.Errorf("task with ID %q does not exist", id)
 	}
 
 	stmt, err := db.Prepare(`
@@ -198,5 +198,20 @@ func updateTask(id string, task Task) error {
 	defer stmt.Close()
 
 	_, err = stmt.Exec(task.Title, task.Description, int(task.CompletedStatus), task.CreatedDate, id)
+	return err
+}
+
+func deleteTask(id string) error {
+	if !taskExists(id) {
+		return fmt.Errorf("Task with id %q does not exist", id)
+	}
+
+	stmt, err := db.Prepare("DELETE FROM Tasks WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
 	return err
 }

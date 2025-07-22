@@ -9,6 +9,6 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/tasks", taskHandler)
-	http.HandleFunc("/tasks/", updateTaskHandler)
+	http.HandleFunc("/tasks/", modifyTaskHandler)
 	http.ListenAndServe(":8080", nil)
 }
