@@ -8,7 +8,11 @@ Build a simple REST API service for managing tasks.
 
 :white_check_mark: Swap slice of Tasks with a SQLite DB
 
-:point_right: Create handlers and routes for all type of operations (CRUD)
+:white_check_mark: Create handlers and routes for all type of operations (CRUD)
+
+:white_check_mark: Implement validation & filtering
+
+:point_right: Add users & Authentication with JWT tokens
 
 Reorganize the project file structure
 
@@ -18,19 +22,12 @@ Add tests
 
 Add logging, CORS
 
-Implement validation
-
-Implement filtering
-
 Implement struct tags
-
-Add users
-
-Authentication with JWT tokens
 
 Swagger or Redoc integration integration?
 
 Deploy it locally and with Docker
+
 
 ## Core features
 
