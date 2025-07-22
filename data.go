@@ -180,3 +180,23 @@ func createTask(task Task) error {
 	_, err = stmt.Exec(task.Id, task.Title, task.Description, int(task.CompletedStatus), task.CreatedDate)
 	return err
 }
+
+func updateTask(id string, task Task) error {
+	if !taskExists(id) {
+		return fmt.Errorf("task with ID %q not found", id)
+	}
+
+	stmt, err := db.Prepare(`
+		UPDATE Tasks 
+		SET title = ?, description = ?, completed_status = ?, created_date = ?
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(task.Title, task.Description, int(task.CompletedStatus), task.CreatedDate, id)
+	return err
+}

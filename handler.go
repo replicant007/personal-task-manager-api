@@ -16,7 +16,7 @@ func taskHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		getTaskHandler(w, r)
 	case http.MethodPost:
-		putTaskHandler(w, r)
+		insertTaskHandler(w, r)
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
@@ -29,7 +29,7 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
-func putTaskHandler(w http.ResponseWriter, r *http.Request) {
+func insertTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task Task
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
@@ -43,7 +43,7 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 	task.CreatedDate = time.Now()
 
 	if task.CompletedStatus < 0 || task.CompletedStatus > 4 {
-		http.Error(w, "Invalid status value", http.StatusBadRequest)
+		http.Error(w, "Status should be between 0 and 4 inclusive", http.StatusBadRequest)
 		return
 	}
 
@@ -60,4 +60,43 @@ func putTaskHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(task)
+}
+
+func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/tasks/")
+
+	if id == "" {
+		http.Error(w, "Task ID is missing", http.StatusBadRequest)
+		return
+	}
+
+	var newTask Task
+	if err := json.NewDecoder(r.Body).Decode(&newTask); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(newTask.Title) == "" {
+		http.Error(w, "Task title is required", http.StatusBadRequest)
+		return
+	}
+
+	if newTask.CompletedStatus < 0 || newTask.CompletedStatus > 4 {
+		http.Error(w, "Status should be between 0 and 4 inclusive", http.StatusBadRequest)
+		return
+	}
+
+	newTask.CreatedDate = time.Now()
+
+	err := updateTask(id, newTask)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to update task", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
