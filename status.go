@@ -11,8 +11,8 @@ const (
 	Canceled
 )
 
-func (str Status) String() string {
-	switch str {
+func (st Status) String() string {
+	switch st {
 	case Open:
 		return "Not Started"
 
@@ -30,6 +30,6 @@ func (str Status) String() string {
 	}
 }
 
-func (stat Status) MarshalJSON() ([]byte, error) {
-	return json.Marshal(stat.String())
+func (st Status) MarshalJSON() ([]byte, error) {
+	return json.Marshal(st.String())
 }

@@ -10,19 +10,21 @@ Build a simple REST API service for managing tasks.
 
 :white_check_mark: Create handlers and routes for all type of operations (CRUD)
 
-:white_check_mark: Implement validation & filtering
+:white_check_mark: Implement validation
 
-:point_right: Add users & Authentication with JWT tokens
+:point_right: Add tests
+
+Add users & Authentication with JWT tokens
 
 Reorganize the project file structure
 
+Implement filtering
+
 Add error handling (Handle errors gracefully)
 
-Add tests
+Enhance logging, add CORS
 
-Add logging, CORS
-
-Implement struct tags
+Implement struct tags for validation and DB
 
 Swagger or Redoc integration integration?
 

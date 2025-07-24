@@ -11,17 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func taskHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		getTaskHandler(w, r)
-	case http.MethodPost:
-		insertTaskHandler(w, r)
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	}
-}
-
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	tasks := getAllTasks()
@@ -62,25 +51,7 @@ func insertTaskHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(task)
 }
 
-func modifyTaskHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/tasks/")
-
-	if id == "" {
-		http.Error(w, "Task ID is missing", http.StatusBadRequest)
-		return
-	}
-
-	switch r.Method {
-	case http.MethodPut:
-		updateTaskHandler(w, r, id)
-	case http.MethodDelete:
-		deleteTaskHandler(w, r, id)
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func updateTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
+func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var newTask Task
 	if err := json.NewDecoder(r.Body).Decode(&newTask); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -99,6 +70,12 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 	newTask.CreatedDate = time.Now()
 
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Task ID is missing", http.StatusBadRequest)
+		return
+	}
+
 	err := updateTask(id, newTask)
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
@@ -112,7 +89,13 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func deleteTaskHandler(w http.ResponseWriter, r *http.Request, id string) {
+func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Task ID is missing", http.StatusBadRequest)
+		return
+	}
+
 	err := deleteTask(id)
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
