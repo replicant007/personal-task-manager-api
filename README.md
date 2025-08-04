@@ -12,11 +12,13 @@ Build a simple REST API service for managing tasks.
 
 :white_check_mark: Implement validation
 
+:white_check_mark: Extract database interaction into an implementation of DB interface
+
 :point_right: Add tests
 
-Add users & Authentication with JWT tokens
+Swagger or Redoc integration
 
-Reorganize the project file structure
+Add users & Authentication with JWT tokens
 
 Implement filtering
 
@@ -26,7 +28,7 @@ Enhance logging, add CORS
 
 Implement struct tags for validation and DB
 
-Swagger or Redoc integration integration?
+Gracefully shut down server (handling of an error from http.ListenAndServe)
 
 Deploy it locally and with Docker
 

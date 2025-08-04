@@ -9,35 +9,46 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
-var db *sql.DB
-
-func InitDB() {
-	createDB()
-
-	checkConnection()
-	createTables()
-
-	seedStatuses()
-	seedTasks()
+type TaskStorage interface {
+	GetAllTasks() ([]Task, error)
+	CreateTask(task Task) error
+	UpdateTask(id string, task Task) error
+	DeleteTask(id string) error
+	CloseDB()
 }
 
-func createDB() {
-	var err error
-	db, err = sql.Open("sqlite", "tasks.db")
+type SQLiteTaskStorage struct {
+	db *sql.DB
+}
+
+func InitDB() TaskStorage {
+	sqlTs := createDB()
+	sqlTs.checkConnection()
+	sqlTs.createTables()
+
+	sqlTs.seedStatuses()
+	sqlTs.seedTasks()
+
+	return sqlTs
+}
+
+func createDB() *SQLiteTaskStorage {
+	db, err := sql.Open("sqlite", "tasks.db")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to open database:", err)
 	}
+	return &SQLiteTaskStorage{db: db}
 }
 
-func checkConnection() {
-	err := db.Ping()
+func (sqlTs *SQLiteTaskStorage) checkConnection() {
+	err := sqlTs.db.Ping()
 	if err != nil {
 		log.Fatal("Failed to connect to the database:", err)
 	}
 	fmt.Println("Successfully connected to SQLite database.")
 }
 
-func createTables() {
+func (sqlTs *SQLiteTaskStorage) createTables() {
 	taskTable := `
 	CREATE TABLE IF NOT EXISTS Tasks (
 		id TEXT PRIMARY KEY,
@@ -47,7 +58,7 @@ func createTables() {
 		created_date DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
 
-	if _, err := db.Exec(taskTable); err != nil {
+	if _, err := sqlTs.db.Exec(taskTable); err != nil {
 		log.Fatal(err)
 	}
 
@@ -57,14 +68,14 @@ func createTables() {
 		name TEXT NOT NULL
 	);`
 
-	if _, err := db.Exec(statusTable); err != nil {
+	if _, err := sqlTs.db.Exec(statusTable); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func seedStatuses() {
+func (sqlTs *SQLiteTaskStorage) seedStatuses() {
 
-	if countStatusRecords() != 0 {
+	if sqlTs.countStatusRecords() != 0 {
 		return
 	}
 
@@ -78,7 +89,7 @@ func seedStatuses() {
 		{3, "Cancelled"},
 	}
 
-	stmtStatuses, err := db.Prepare("INSERT INTO Status (id, name) VALUES (?, ?)")
+	stmtStatuses, err := sqlTs.db.Prepare("INSERT INTO Status (id, name) VALUES (?, ?)")
 	if err != nil {
 		log.Fatal("Failed to prepare insert statement:", err)
 	}
@@ -92,8 +103,8 @@ func seedStatuses() {
 	}
 }
 
-func countStatusRecords() int {
-	row := db.QueryRow("SELECT COUNT(*) FROM Status")
+func (sqlTs *SQLiteTaskStorage) countStatusRecords() int {
+	row := sqlTs.db.QueryRow("SELECT COUNT(*) FROM Status")
 	count := 0
 	err := row.Scan(&count)
 	if err != nil {
@@ -102,8 +113,8 @@ func countStatusRecords() int {
 	return count
 }
 
-func seedTasks() {
-	stmtTasks, err := db.Prepare(`
+func (sqlTs *SQLiteTaskStorage) seedTasks() {
+	stmtTasks, err := sqlTs.db.Prepare(`
 		INSERT INTO Tasks (id, title, description, completed_status, created_date) 
 		VALUES (?, ?, ?, ?, ?)
 	`)
@@ -112,7 +123,7 @@ func seedTasks() {
 	}
 	defer stmtTasks.Close()
 
-	if !taskExists("task-001") {
+	if !sqlTs.taskExists("task-001") {
 		_, err = stmtTasks.Exec("task-001", "Learn Go", "Complete the tutorial on structs and interfaces", 2, time.Date(2025, 7, 14, 9, 0, 0, 0, time.UTC))
 		if err != nil {
 			log.Fatal(err)
@@ -120,7 +131,7 @@ func seedTasks() {
 		fmt.Println("Task seeded: task-001")
 	}
 
-	if !taskExists("task-002") {
+	if !sqlTs.taskExists("task-002") {
 		_, err = stmtTasks.Exec("task-002", "Prepare project", "Create a new Golang project in Gitlab", 1, time.Date(2025, 7, 13, 9, 0, 0, 0, time.UTC))
 		if err != nil {
 			log.Fatal(err)
@@ -129,19 +140,20 @@ func seedTasks() {
 	}
 }
 
-func taskExists(id string) bool {
-	row := db.QueryRow("SELECT COUNT(*) FROM Tasks WHERE id = ?", id)
+func (sqlTs *SQLiteTaskStorage) taskExists(id string) bool {
+	row := sqlTs.db.QueryRow("SELECT COUNT(*) FROM Tasks WHERE id = ?", id)
 	var count int
 	if err := row.Scan(&count); err != nil {
-		log.Fatal("Checking if task exists: ", err)
+		log.Printf("Checking if task exists: %s", err)
 	}
 	return count != 0
 }
 
-func getAllTasks() []Task {
-	rows, err := db.Query("SELECT * FROM Tasks")
+func (sqlTs *SQLiteTaskStorage) GetAllTasks() ([]Task, error) {
+	rows, err := sqlTs.db.Query("SELECT * FROM Tasks")
 	if err != nil {
-		log.Fatal("Failed to query data:", err)
+		log.Printf("Failed to query data: %s", err)
+		return []Task{}, err
 	}
 	defer rows.Close()
 
@@ -161,32 +173,35 @@ func getAllTasks() []Task {
 	}
 
 	if err := rows.Err(); err != nil {
-		return []Task{}
+		return []Task{}, err
 	}
 
-	return tasks
+	return tasks, nil
 }
 
-func createTask(task Task) error {
-	stmt, err := db.Prepare(`
+func (sqlTs *SQLiteTaskStorage) CreateTask(task Task) error {
+	stmt, err := sqlTs.db.Prepare(`
 		INSERT INTO Tasks (id, title, description, completed_status, created_date)
 		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
-		return err
+		return fmt.Errorf("create task failed: %w", err)
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(task.Id, task.Title, task.Description, int(task.CompletedStatus), task.CreatedDate)
+	if err != nil {
+		return fmt.Errorf("create task failed: %w", err)
+	}
 	return err
 }
 
-func updateTask(id string, task Task) error {
-	if !taskExists(id) {
+func (sqlTs *SQLiteTaskStorage) UpdateTask(id string, task Task) error {
+	if !sqlTs.taskExists(id) {
 		return fmt.Errorf("task with ID %q does not exist", id)
 	}
 
-	stmt, err := db.Prepare(`
+	stmt, err := sqlTs.db.Prepare(`
 		UPDATE Tasks 
 		SET title = ?, description = ?, completed_status = ?, created_date = ?
 		WHERE id = ?
@@ -201,12 +216,12 @@ func updateTask(id string, task Task) error {
 	return err
 }
 
-func deleteTask(id string) error {
-	if !taskExists(id) {
+func (sqlTs *SQLiteTaskStorage) DeleteTask(id string) error {
+	if !sqlTs.taskExists(id) {
 		return fmt.Errorf("Task with id %q does not exist", id)
 	}
 
-	stmt, err := db.Prepare("DELETE FROM Tasks WHERE id = ?")
+	stmt, err := sqlTs.db.Prepare("DELETE FROM Tasks WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -214,4 +229,8 @@ func deleteTask(id string) error {
 
 	_, err = stmt.Exec(id)
 	return err
+}
+
+func (sqlTs *SQLiteTaskStorage) CloseDB() {
+	sqlTs.db.Close()
 }
