@@ -1,0 +1,140 @@
+definitions:
+  docsapi.TaskInput:
+    properties:
+      completed_status:
+        example: 2
+        type: integer
+      description:
+        example: Add example values to POST request
+        type: string
+      title:
+        example: Write Swagger annotations
+        type: string
+    type: object
+  docsapi.TaskUpdate:
+    properties:
+      completed_status:
+        example: 1
+        type: integer
+      description:
+        example: Updated description...
+        type: string
+      title:
+        example: Updated title....
+        type: string
+    type: object
+  models.Task:
+    properties:
+      completed_status:
+        description: |-
+          CompletedStatus is the current status of the task
+          enum: [0,1,2,3]
+          x-enum-varnames: [Not Started, In Progress, Completed, Cancelled]
+        type: integer
+      created_date:
+        description: swagger:strfmt date-time
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /tasks:
+    get:
+      description: Returns a list of all tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Task'
+            type: array
+      summary: Get all tasks
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Adds a new task to the system
+      parameters:
+      - description: Task to insert
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/docsapi.TaskInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Task'
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+      summary: Insert a new task
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      description: Deletes a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "404":
+          description: Task not found
+          schema:
+            type: string
+      summary: Delete a task
+      tags:
+      - tasks
+    put:
+      consumes:
+      - application/json
+      description: Updates a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated task
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/docsapi.TaskUpdate'
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Invalid input
+          schema:
+            type: string
+        "404":
+          description: Task not found
+          schema:
+            type: string
+      summary: Update a task
+      tags:
+      - tasks
+swagger: "2.0"

@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -7,12 +7,13 @@ import (
 	"time"
 
 	_ "github.com/glebarez/go-sqlite"
+	"gitlab.com/nikolayignatov/personal-task-manager-api/internal/models"
 )
 
 type TaskStorage interface {
-	GetAllTasks() ([]Task, error)
-	CreateTask(task Task) error
-	UpdateTask(id string, task Task) error
+	GetAllTasks() ([]models.Task, error)
+	CreateTask(task models.Task) error
+	UpdateTask(id string, task models.Task) error
 	DeleteTask(id string) error
 	CloseDB()
 }
@@ -149,18 +150,18 @@ func (sqlTs *SQLiteTaskStorage) taskExists(id string) bool {
 	return count != 0
 }
 
-func (sqlTs *SQLiteTaskStorage) GetAllTasks() ([]Task, error) {
+func (sqlTs *SQLiteTaskStorage) GetAllTasks() ([]models.Task, error) {
 	rows, err := sqlTs.db.Query("SELECT * FROM Tasks")
 	if err != nil {
 		log.Printf("Failed to query data: %s", err)
-		return []Task{}, err
+		return []models.Task{}, err
 	}
 	defer rows.Close()
 
-	var tasks []Task
+	var tasks []models.Task
 
 	for rows.Next() {
-		var t Task
+		var t models.Task
 		var statusInt int
 
 		err := rows.Scan(&t.Id, &t.Title, &t.Description, &statusInt, &t.CreatedDate)
@@ -168,18 +169,18 @@ func (sqlTs *SQLiteTaskStorage) GetAllTasks() ([]Task, error) {
 			log.Fatal(err)
 		}
 
-		t.CompletedStatus = Status(statusInt)
+		t.CompletedStatus = models.Status(statusInt)
 		tasks = append(tasks, t)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []Task{}, err
+		return []models.Task{}, err
 	}
 
 	return tasks, nil
 }
 
-func (sqlTs *SQLiteTaskStorage) CreateTask(task Task) error {
+func (sqlTs *SQLiteTaskStorage) CreateTask(task models.Task) error {
 	stmt, err := sqlTs.db.Prepare(`
 		INSERT INTO Tasks (id, title, description, completed_status, created_date)
 		VALUES (?, ?, ?, ?, ?)
@@ -196,7 +197,7 @@ func (sqlTs *SQLiteTaskStorage) CreateTask(task Task) error {
 	return err
 }
 
-func (sqlTs *SQLiteTaskStorage) UpdateTask(id string, task Task) error {
+func (sqlTs *SQLiteTaskStorage) UpdateTask(id string, task models.Task) error {
 	if !sqlTs.taskExists(id) {
 		return fmt.Errorf("task with ID %q does not exist", id)
 	}
@@ -218,7 +219,7 @@ func (sqlTs *SQLiteTaskStorage) UpdateTask(id string, task Task) error {
 
 func (sqlTs *SQLiteTaskStorage) DeleteTask(id string) error {
 	if !sqlTs.taskExists(id) {
-		return fmt.Errorf("Task with id %q does not exist", id)
+		return fmt.Errorf("task with id %q does not exist", id)
 	}
 
 	stmt, err := sqlTs.db.Prepare("DELETE FROM Tasks WHERE id = ?")

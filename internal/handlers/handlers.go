@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gitlab.com/nikolayignatov/personal-task-manager-api/internal/db"
+	"gitlab.com/nikolayignatov/personal-task-manager-api/internal/models"
 )
 
-func getTaskHandler(ts TaskStorage) http.HandlerFunc {
+func GetTaskHandler(ts db.TaskStorage) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -21,10 +23,10 @@ func getTaskHandler(ts TaskStorage) http.HandlerFunc {
 	}
 }
 
-func insertTaskHandler(ts TaskStorage) http.HandlerFunc {
+func InsertTaskHandler(ts db.TaskStorage) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var task Task
+		var task models.Task
 
 		if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -57,10 +59,10 @@ func insertTaskHandler(ts TaskStorage) http.HandlerFunc {
 	}
 }
 
-func updateTaskHandler(ts TaskStorage) http.HandlerFunc {
+func UpdateTaskHandler(ts db.TaskStorage) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var newTask Task
+		var newTask models.Task
 		if err := json.NewDecoder(r.Body).Decode(&newTask); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
@@ -98,7 +100,7 @@ func updateTaskHandler(ts TaskStorage) http.HandlerFunc {
 	}
 }
 
-func deleteTaskHandler(ts TaskStorage) http.HandlerFunc {
+func DeleteTaskHandler(ts db.TaskStorage) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
